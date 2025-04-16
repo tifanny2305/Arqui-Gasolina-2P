@@ -1,0 +1,79 @@
+<?php
+
+require_once(__DIR__ . '/../config/database.php'); // Incluimos la conexión a la base de datos
+
+class Msucursal {
+    private $db;
+    
+    // Propiedades de la sucursal
+    public $id;
+    public $nombre;
+    public $ubicacion;
+    public $bombas;
+    
+    // Constructor
+    public function __construct() {
+        // Crear una nueva instancia de la conexión a la base de datos
+        $database = new Database();
+        $this->db = $database->obtenerConexion();
+    }
+    
+    // Crear una nueva sucursal
+    public function crearSucursal($nombre, $ubicacion, $bombas) {
+        $query = "INSERT INTO sucursal (nombre, ubicacion, bombas) VALUES (?, ?, ?)";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->bind_param("ssi", $nombre, $ubicacion, $bombas);
+        
+        if ($stmt->execute()) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    // Obtener todas las sucursales
+    public function obtenerSucursales() {
+        $query = "SELECT * FROM sucursal";
+        $result = $this->db->query($query);
+        
+        return $result;
+    }
+    
+    // Obtener detalles de una sucursal por ID
+    public function obtenerSucursalPorId($id) {
+        $query = "SELECT * FROM sucursal WHERE id = ?";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        
+        $result = $stmt->get_result();
+        return $result->fetch_assoc();
+    }
+
+    // Método para actualizar la sucursal (puedes añadir otros métodos de actualización)
+    public function actualizarSucursal($id, $nombre, $ubicacion, $bombas) {
+        $query = "UPDATE sucursal SET nombre = ?, ubicacion = ?, bombas = ? WHERE id = ?";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->bind_param("ssii", $nombre, $ubicacion, $bombas, $id);
+        
+        if ($stmt->execute()) {
+            return true;
+        }
+        
+        return false;
+    }
+
+    public function eliminarSucursal($id) {
+        $query = "DELETE FROM sucursal WHERE id = ?";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->bind_param("i", $id);
+        
+        return $stmt->execute();
+    }
+
+
+}
