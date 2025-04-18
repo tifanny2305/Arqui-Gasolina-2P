@@ -1,4 +1,3 @@
-<!-- vistas/registrar_sucursal.php -->
 <!DOCTYPE html>
 <html lang="es">
 <head>

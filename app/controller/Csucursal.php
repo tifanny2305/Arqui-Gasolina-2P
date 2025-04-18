@@ -10,31 +10,36 @@ class Csucursal
         $this->Msucursal = new Msucursal();
     }
 
+    public function mostrar_crear_sucursal()
+    {
+        require_once __DIR__ . '/../view/Vsucursal/create.php';
+    }
+
     public function crear_sucursal()
     {
-        // Verificar si el formulario fue enviado
+
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Recoger datos del formulario
             $nombre = $_POST['nombre'];
             $ubicacion = $_POST['ubicacion'];
             $bombas = $_POST['bombas'];
 
-            // Validación básica de los datos
             if (empty($nombre) || empty($ubicacion) || empty($bombas)) {
                 echo "Por favor, complete todos los campos.";
                 return;
             }
 
-            // Llamar al modelo para registrar la sucursal
             if ($this->Msucursal->crearSucursal($nombre, $ubicacion, $bombas)) {
                 echo "Sucursal registrada correctamente.";
+                header("Location: index.php?action=sucursales");
+                exit();
             } else {
                 echo "Error al registrar la sucursal.";
             }
         }
     }
 
-    public function index()
+    public function indexS()
     {
         $sucursales = $this->Msucursal->obtenerSucursales(); 
         require_once __DIR__ . '/../view/Vsucursal/index.php';
@@ -78,7 +83,8 @@ class Csucursal
             $id = $_GET['id'];
 
             if ($this->Msucursal->eliminarSucursal($id)) {
-                header("Location: index.php?action=index");
+                header("Location: index.php?action=sucursales");
+                exit;
             } else {
                 echo "Error al eliminar la sucursal.";
             }

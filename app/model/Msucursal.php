@@ -1,11 +1,10 @@
 <?php
 
-require_once(__DIR__ . '/../config/database.php'); // Incluimos la conexión a la base de datos
+require_once(__DIR__ . '/../config/database.php'); 
 
 class Msucursal {
     private $db;
     
-    // Propiedades de la sucursal
     public $id;
     public $nombre;
     public $ubicacion;
@@ -13,12 +12,10 @@ class Msucursal {
     
     // Constructor
     public function __construct() {
-        // Crear una nueva instancia de la conexión a la base de datos
         $database = new Database();
         $this->db = $database->obtenerConexion();
     }
     
-    // Crear una nueva sucursal
     public function crearSucursal($nombre, $ubicacion, $bombas) {
         $query = "INSERT INTO sucursal (nombre, ubicacion, bombas) VALUES (?, ?, ?)";
         
@@ -32,7 +29,6 @@ class Msucursal {
         return false;
     }
     
-    // Obtener todas las sucursales
     public function obtenerSucursales() {
         $query = "SELECT * FROM sucursal";
         $result = $this->db->query($query);
@@ -40,7 +36,6 @@ class Msucursal {
         return $result;
     }
     
-    // Obtener detalles de una sucursal por ID
     public function obtenerSucursalPorId($id) {
         $query = "SELECT * FROM sucursal WHERE id = ?";
         
@@ -52,7 +47,6 @@ class Msucursal {
         return $result->fetch_assoc();
     }
 
-    // Método para actualizar la sucursal (puedes añadir otros métodos de actualización)
     public function actualizarSucursal($id, $nombre, $ubicacion, $bombas) {
         $query = "UPDATE sucursal SET nombre = ?, ubicacion = ?, bombas = ? WHERE id = ?";
         

@@ -8,6 +8,8 @@
 
     <h1>Lista de Sucursales</h1>
     <a href="index.php?action=crear_sucursal">Agregar Nueva Sucursal</a>
+    </p>
+    <a href="index.php">Volver al Menú Principal</a>
 
     <table border="1" cellpadding="8">
         <thead>
