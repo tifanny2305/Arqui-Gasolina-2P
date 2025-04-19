@@ -52,6 +52,7 @@
         <div class="menu-options">
             <a href="index.php?action=sucursales" class="menu-btn">Gestión de Sucursales</a>
             <a href="index.php?action=combustibles" class="menu-btn">Gestión de Combustibles</a>
+            <a href="index.php?action=tanques" class="menu-btn">Gestión de Tanques</a>
         </div>
     </div>
 </body>

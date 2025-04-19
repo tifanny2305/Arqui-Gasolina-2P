@@ -48,17 +48,18 @@ class Msucursal_combustible {
         $stmt->bind_param("iis", $sucursal_id, $combustible_id, $duracion_tanque);
         return $stmt->execute();
     }
-
-
+    
     public function obtenerCombustiblesPorSucursal($sucursal_id) {
-        $query = "SELECT sc.*, c.tipo 
-                 FROM sucursal_combustible sc
-                 JOIN combustible c ON sc.combustible_id = c.id
-                 WHERE sc.sucursal_id = ?";
+        $query = "SELECT c.id, c.tipo, sc.capacidad_max, sc.capacidad_min, sc.fecha_actualizada, sc.estado
+                  FROM sucursal_combustible sc
+                  JOIN combustible c ON c.id = sc.combustible_id
+                  WHERE sc.sucursal_id = ?";
+    
         $stmt = $this->db->prepare($query);
         $stmt->bind_param("i", $sucursal_id);
         $stmt->execute();
-        return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $result = $stmt->get_result();
+        return $result->fetch_all(MYSQLI_ASSOC);
     }
 
     public function eliminarCombustiblesDeSucursal($sucursal_id) {
@@ -66,6 +67,27 @@ class Msucursal_combustible {
         $stmt = $this->db->prepare($query);
         $stmt->bind_param("i", $sucursal_id);
         return $stmt->execute();
+    }
+
+    //Del tanque
+    public function eliminarCombustible($sucursal_id, $combustible_id) {
+        $query = "DELETE FROM sucursal_combustible 
+                  WHERE sucursal_id = ? AND combustible_id = ?";
+        
+        $stmt = $this->db->prepare($query);
+        if (!$stmt) {
+            error_log("Error preparando consulta: " . $this->db->error);
+            return false;
+        }
+        
+        $stmt->bind_param("ii", $sucursal_id, $combustible_id);
+        $result = $stmt->execute();
+        
+        if (!$result) {
+            error_log("Error ejecutando consulta: " . $stmt->error);
+        }
+        
+        return $result;
     }
 
     public function actualizarEstadoCombustible($sucursal_id, $combustible_id, $estado) {
@@ -77,6 +99,20 @@ class Msucursal_combustible {
         
         $stmt = $this->db->prepare($query);
         $stmt->bind_param("ssii", $estado, $fecha_actualizada, $sucursal_id, $combustible_id);
+        return $stmt->execute();
+    }
+
+    public function actualizarTanque($sucursal_id, $combustible_id, $capacidad_max, $capacidad_min, $estado) {
+        
+        $query = "UPDATE sucursal_combustible SET 
+                 capacidad_max = ?, 
+                 capacidad_min = ?, 
+                 estado = ?, 
+                 fecha_actualizada = NOW() 
+                 WHERE sucursal_id = ? AND combustible_id = ?";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->bind_param("iisii", $capacidad_max, $capacidad_min, $estado, $sucursal_id, $combustible_id);
         return $stmt->execute();
     }
 

@@ -50,6 +50,8 @@ class Csucursal
                 return;
             }
 
+            
+
             // Asignar combustibles seleccionados
             if (!empty($_POST['combustibles'])) {
                 foreach ($_POST['combustibles'] as $combustible_id) {

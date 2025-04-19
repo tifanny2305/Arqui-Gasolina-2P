@@ -1,9 +1,12 @@
 <?php
 require_once __DIR__ . '/controller/Csucursal.php';
 require_once __DIR__ . '/controller/Ccombustible.php';
+require_once __DIR__ . '/controller/Csucursal_combustible.php';
 
 $Csucursal = new Csucursal();
 $Ccombustible = new Ccombustible();
+$Csucursal_combustible = new Csucursal_combustible();
+
 $action = $_GET['action'] ?? 'menu';
 
 switch ($action) {
@@ -51,6 +54,23 @@ switch ($action) {
     case 'eliminar_combustible':
         $Ccombustible->eliminar_combustible();
         break;
+    
+    // Acciones para asignar combustibles a sucursales
+    case 'tanques':
+        $Csucursal_combustible->listarSucursales();
+        break;
+    case 'gestionar_tanques':
+        $Csucursal_combustible->tanques();
+        break;
+    case 'actualizar_tanques':
+        $Csucursal_combustible->actualizarTanques();
+        break;
+    case 'eliminar_combustible_sucursal':
+        $Csucursal_combustible->eliminarCombustible();
+        break;
+    /*case 'asignar_combustible':
+        $Csucursal_combustible->mostrarAsignacion();
+        break;*/
         
     default:
         echo "Acción no válida.";

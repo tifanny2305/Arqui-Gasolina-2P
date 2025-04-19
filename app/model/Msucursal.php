@@ -29,7 +29,7 @@ class Msucursal {
         $stmt->bind_param("ssi", $nombre, $ubicacion, $bombas);
         
         if ($stmt->execute()) {
-            return true;
+            return $this->db->insert_id;
         }
         
         return false;
