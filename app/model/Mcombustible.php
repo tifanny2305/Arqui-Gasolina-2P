@@ -4,43 +4,53 @@ require_once(__DIR__ . '/../config/database.php');
 class Mcombustible {
     private $db;
 
+    // Atributos públicos del combustible
+    public $id;
+    public $tipo;
+
     public function __construct() {
         $database = new Database();
         $this->db = $database->obtenerConexion();
     }
 
-    public function crearCombustible($tipo, $litros) {
-        $query = "INSERT INTO tipo_combustible (tipo, litros) VALUES (?, ?)";
+    // Crear nuevo combustible
+    public function crearCombustible($tipo) {
+        $query = "INSERT INTO combustible (tipo) VALUES (?)";
         $stmt = $this->db->prepare($query);
-        $stmt->bind_param("si", $tipo, $litros);
+        $stmt->bind_param("s", $tipo);
         return $stmt->execute();
     }
 
+    // Obtener todos los combustibles
     public function obtenerCombustible() {
-        $query = "SELECT * FROM tipo_combustible";
+        $query = "SELECT * FROM combustible";
         $result = $this->db->query($query);
         return $result;
     }
 
+    // Obtener un combustible por su ID
     public function obtenerCombustiblePorId($id) {
-        $query = "SELECT * FROM tipo_combustible WHERE id = ?";
+        $query = "SELECT * FROM combustible WHERE id = ?";
         $stmt = $this->db->prepare($query);
         $stmt->bind_param("i", $id);
         $stmt->execute();
         return $stmt->get_result()->fetch_assoc();
     }
 
-    public function actualizarCombustible($id, $tipo, $litros) {
-        $query = "UPDATE tipo_combustible SET tipo = ?, litros = ? WHERE id = ?";
+    // Actualizar un combustible
+    public function actualizarCombustible($id, $tipo) {
+        $query = "UPDATE combustible SET tipo = ? WHERE id = ?";
         $stmt = $this->db->prepare($query);
-        $stmt->bind_param("sii", $tipo, $litros, $id);
+        $stmt->bind_param("si", $tipo, $id);
         return $stmt->execute();
     }
 
+    // Eliminar un combustible
     public function eliminarCombustible($id) {
-        $query = "DELETE FROM tipo_combustible WHERE id = ?";
+        $query = "DELETE FROM combustible WHERE id = ?";
         $stmt = $this->db->prepare($query);
         $stmt->bind_param("i", $id);
         return $stmt->execute();
     }
 }
+

@@ -17,7 +17,6 @@
             <tr>
                 <th>ID</th>
                 <th>Tipo</th>
-                <th>Litros</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -26,7 +25,6 @@
                 <tr>
                     <td><?= $tipo['id']; ?></td>
                     <td><?= $tipo['tipo']; ?></td>
-                    <td><?= $tipo['litros']; ?></td>
                     <td>
                         <a href="index.php?action=editar_combustible&id=<?= $tipo['id']; ?>">Editar</a> 
                         <a href="index.php?action=eliminar_combustible&id=<?= $tipo['id']; ?>" onclick="return confirm('¿Estás seguro de eliminar este tipo de combustible?')">Eliminar</a>

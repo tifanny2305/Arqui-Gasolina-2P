@@ -21,11 +21,19 @@
     <label for="bombas">Número de Bombas:</label>
     <input type="number" id="bombas" name="bombas" value="<?= $sucursal['bombas'] ?>" required><br><br>
 
-    <button type="submit">Actualizar</button>
-</form>
+    <label>Combustibles:</label><br>
+        <?php foreach ($combustibles as $combustible): ?>
+            <input type="checkbox" name="combustibles[]" id="combustible_<?= $combustible['id'] ?>" 
+                   value="<?= $combustible['id'] ?>"
+                   <?= in_array($combustible['id'], $combustibles_seleccionados) ? 'checked' : '' ?>>
+            <label for="combustible_<?= $combustible['id'] ?>"><?= $combustible['tipo'] ?></label><br>
+        <?php endforeach; ?><br>
+
+        <button type="submit">Actualizar</button>
+    </form>
 
 
-    <a href="index.php">Volver</a>
+    <a href="index.php?action=sucursales">Volver</a>
 
 </body>
 </html>

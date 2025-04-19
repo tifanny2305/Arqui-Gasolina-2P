@@ -21,9 +21,8 @@ class Ccombustible {
     public function crear_combustible() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $tipo = $_POST['tipo'];
-            $litros = $_POST['litros'];
 
-            if ($this->Mcombustible->crearCombustible($tipo, $litros)) {
+            if ($this->Mcombustible->crearCombustible($tipo)) {
                 header("Location: index.php?action=combustibles");
             } else {
                 echo "Error al registrar el tipo de combustible.";
@@ -44,9 +43,8 @@ class Ccombustible {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = $_POST['id'];
             $tipo = $_POST['tipo'];
-            $litros = $_POST['litros'];
     
-            if ($this->Mcombustible->actualizarCombustible($id, $tipo, $litros)) {
+            if ($this->Mcombustible->actualizarCombustible($id, $tipo)) {
                 header("Location: index.php?action=combustibles");
                 exit;
             } else {

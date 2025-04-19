@@ -10,12 +10,18 @@ class Msucursal {
     public $ubicacion;
     public $bombas;
     
-    // Constructor
     public function __construct() {
         $database = new Database();
         $this->db = $database->obtenerConexion();
     }
     
+    public function obtenerSucursales() {
+        $query = "SELECT * FROM sucursal";
+        $result = $this->db->query($query);
+        
+        return $result;
+    }
+
     public function crearSucursal($nombre, $ubicacion, $bombas) {
         $query = "INSERT INTO sucursal (nombre, ubicacion, bombas) VALUES (?, ?, ?)";
         
@@ -27,13 +33,6 @@ class Msucursal {
         }
         
         return false;
-    }
-    
-    public function obtenerSucursales() {
-        $query = "SELECT * FROM sucursal";
-        $result = $this->db->query($query);
-        
-        return $result;
     }
     
     public function obtenerSucursalPorId($id) {
