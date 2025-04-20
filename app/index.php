@@ -2,10 +2,12 @@
 require_once __DIR__ . '/controller/Csucursal.php';
 require_once __DIR__ . '/controller/Ccombustible.php';
 require_once __DIR__ . '/controller/Csucursal_combustible.php';
+require_once __DIR__ . '/controller/Ccola_estimada.php';
 
 $Csucursal = new Csucursal();
 $Ccombustible = new Ccombustible();
 $Csucursal_combustible = new Csucursal_combustible();
+$Ccola_estimada = new Ccola_estimada();
 
 $action = $_GET['action'] ?? 'menu';
 
@@ -68,10 +70,16 @@ switch ($action) {
     case 'eliminar_combustible_sucursal':
         $Csucursal_combustible->eliminarCombustible();
         break;
-    /*case 'asignar_combustible':
-        $Csucursal_combustible->mostrarAsignacion();
-        break;*/
-        
+
+    // Acciones para estimar colas
+    case 'estimacion_cola':
+        $Ccola_estimada->listarSucursales();
+        break;
+    case 'mostrar_cola':
+        if (isset($_GET['id'])) {
+            $Ccola_estimada->mostrarPorSucursal($_GET['id']);
+        }
+        break;
     default:
         echo "Acción no válida.";
         break;

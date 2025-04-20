@@ -2,27 +2,28 @@
 require_once __DIR__ . '/../model/Msucursal_combustible.php';
 require_once __DIR__ . '/../model/Msucursal.php';
 require_once __DIR__ . '/../model/Mcombustible.php';
+require_once __DIR__ . '/../model/Mcola_estimada.php';
 
 class Csucursal_combustible {
-    private $model;
-    private $modelSucursal;
-    private $modelCombustible;
+    private $Msucursal_combustible;
+    private $Msucursal;
+    private $Mcola_estimada;
 
     public function __construct() {
-        $this->model = new Msucursal_combustible();
-        $this->modelSucursal = new Msucursal();
-        $this->modelCombustible = new Mcombustible();
+        $this->Msucursal_combustible = new Msucursal_combustible();
+        $this->Msucursal = new Msucursal();
+        $this->Mcola_estimada = new Mcola_estimada();
     }
 
     public function listarSucursales() {
-        $sucursales = $this->modelSucursal->obtenerSucursales();
+        $sucursales = $this->Msucursal->obtenerSucursales();
         require_once __DIR__ . '/../view/Vsucursal_combustible/index.php';
     }
 
     public function tanques() {
         $sucursal_id = $_GET['id'];
-        $sucursal = $this->modelSucursal->obtenerSucursalPorId($sucursal_id);
-        $combustibles = $this->model->obtenerCombustiblesPorSucursal($sucursal_id);
+        $sucursal = $this->Msucursal->obtenerSucursalPorId($sucursal_id);
+        $combustibles = $this->Msucursal_combustible->obtenerCombustiblesPorSucursal($sucursal_id);
         
         require_once __DIR__ . '/../view/Vsucursal_combustible/gestionar.php';
     }
@@ -32,13 +33,22 @@ class Csucursal_combustible {
             $sucursal_id = $_POST['sucursal_id'];
             
             foreach ($_POST['combustibles'] as $combustible_id => $datos) {
-                $this->model->actualizarTanque(
+                // 1. Actualizar el tanque en la base de datos
+                $this->Msucursal_combustible->actualizarTanque(
                     $sucursal_id,
                     $combustible_id,
-                    $datos['capacidad_max'],
-                    $datos['capacidad_min'],
+                    $datos['capacidad_actual'],
                     $datos['estado']
                 );
+                
+                // 2. Si el combustible está activo, actualizar estimación
+                if ($datos['estado'] === 'active') {
+                    $this->Mcola_estimada->actualizarEstimacionAutomatica(
+                        $sucursal_id,
+                        $combustible_id,
+                        $datos['capacidad_actual']
+                    );
+                }
             }
             
             $_SESSION['success'] = "Configuración de tanques actualizada correctamente";
@@ -47,6 +57,7 @@ class Csucursal_combustible {
         }
     }
     
+    
     //Procesa la asignación de combustibles
     public function asignarCombustible() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -54,7 +65,7 @@ class Csucursal_combustible {
             $combustible_id = $_POST['combustible_id'];
             $duracion = $_POST['duracion_tanque'];
 
-            if ($this->model->crearRelacion($sucursal_id, $combustible_id, $duracion)) {
+            if ($this->Msucursal_combustible->crearRelacion($sucursal_id, $combustible_id, $duracion)) {
                 header("Location: index.php?action=ver_sucursal&id=$sucursal_id");
                 exit;
             } else {
@@ -77,7 +88,7 @@ class Csucursal_combustible {
                 exit;
             }
     
-            if ($this->model->eliminarCombustible($sucursal_id, $combustible_id)) {
+            if ($this->Msucursal_combustible->eliminarCombustible($sucursal_id, $combustible_id)) {
                 $_SESSION['success'] = "Combustible eliminado correctamente";
             } else {
                 $_SESSION['error'] = "Error al eliminar el combustible";
@@ -87,6 +98,8 @@ class Csucursal_combustible {
             exit;
         }
     }
+
+    
 
     
 }

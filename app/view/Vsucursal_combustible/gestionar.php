@@ -14,8 +14,7 @@
             <thead>
                 <tr>
                     <th>Combustible</th>
-                    <th>Capacidad Máxima</th>
-                    <th>Capacidad Mínima</th>
+                    <th>Capacidad Actual</th>
                     <th>Fecha Actualizada</th>
                     <th>Estado</th>
                 </tr>
@@ -27,15 +26,8 @@
                         <td>
                             <input 
                                 type="number" 
-                                name="combustibles[<?= $combustible['id'] ?>][capacidad_max]" 
-                                value="<?= htmlspecialchars($combustible['capacidad_max']) ?>" 
-                                required>
-                        </td>
-                        <td>
-                            <input 
-                                type="number" 
-                                name="combustibles[<?= $combustible['id'] ?>][capacidad_min]" 
-                                value="<?= htmlspecialchars($combustible['capacidad_min']) ?>" 
+                                name="combustibles[<?= $combustible['id'] ?>][capacidad_actual]" 
+                                value="<?= htmlspecialchars($combustible['capacidad_actual']) ?>" 
                                 required>
                         </td>
                         <td>

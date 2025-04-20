@@ -6,6 +6,7 @@ class Msucursal_combustible {
 
     public $sucursal_id;
     public $combustible_id;
+    public $capacidad_actual;
     public $estado;
     public $fecha_actualizada;
 
@@ -50,7 +51,7 @@ class Msucursal_combustible {
     }
     
     public function obtenerCombustiblesPorSucursal($sucursal_id) {
-        $query = "SELECT c.id, c.tipo, sc.capacidad_max, sc.capacidad_min, sc.fecha_actualizada, sc.estado
+        $query = "SELECT c.id, c.tipo, sc.capacidad_actual, sc.fecha_actualizada, sc.estado
                   FROM sucursal_combustible sc
                   JOIN combustible c ON c.id = sc.combustible_id
                   WHERE sc.sucursal_id = ?";
@@ -102,17 +103,16 @@ class Msucursal_combustible {
         return $stmt->execute();
     }
 
-    public function actualizarTanque($sucursal_id, $combustible_id, $capacidad_max, $capacidad_min, $estado) {
+    public function actualizarTanque($sucursal_id, $combustible_id, $capacidad_actual, $estado) {
         
         $query = "UPDATE sucursal_combustible SET 
-                 capacidad_max = ?, 
-                 capacidad_min = ?, 
+                 capacidad_actual = ?, 
                  estado = ?, 
                  fecha_actualizada = NOW() 
                  WHERE sucursal_id = ? AND combustible_id = ?";
         
         $stmt = $this->db->prepare($query);
-        $stmt->bind_param("iisii", $capacidad_max, $capacidad_min, $estado, $sucursal_id, $combustible_id);
+        $stmt->bind_param("isii", $capacidad_actual, $estado, $sucursal_id, $combustible_id);
         return $stmt->execute();
     }
 

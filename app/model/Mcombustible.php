@@ -4,7 +4,6 @@ require_once(__DIR__ . '/../config/database.php');
 class Mcombustible {
     private $db;
 
-    // Atributos públicos del combustible
     public $id;
     public $tipo;
 

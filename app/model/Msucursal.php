@@ -68,5 +68,44 @@ class Msucursal {
         return $stmt->execute();
     }
 
+    //esta funcin de abajo eliminarla
+    public function actualizarCapacidadTanque($sucursal_id, $combustible_id, $capacidad) {
+        // Validar parámetros
+        if (!is_numeric($sucursal_id) || !is_numeric($combustible_id) || !is_numeric($capacidad)) {
+            error_log("Parámetros inválidos para actualizar tanque");
+            return false;
+        }
+    
+        try {
+            $query = "UPDATE sucursal_combustible 
+                     SET capacidad_actual = ?, fecha_actualizada = NOW() 
+                     WHERE sucursal_id = ? AND combustible_id = ?";
+            
+            $stmt = $this->db->prepare($query);
+            if (!$stmt) {
+                error_log("Error preparando consulta: " . $this->db->error);
+                return false;
+            }
+            
+            $stmt->bind_param("dii", $capacidad, $sucursal_id, $combustible_id);
+            
+            if (!$stmt->execute()) {
+                error_log("Error ejecutando actualización: " . $stmt->error);
+                return false;
+            }
+            
+            // Verificar que realmente se actualizó algún registro
+            if ($stmt->affected_rows === 0) {
+                error_log("No se actualizó ningún tanque. ¿Existe la relación sucursal-combustible?");
+                return false;
+            }
+            
+            return true;
+            
+        } catch (Exception $e) {
+            error_log("Excepción en actualizarCapacidadTanque: " . $e->getMessage());
+            return false;
+        }
+    }
 
 }
