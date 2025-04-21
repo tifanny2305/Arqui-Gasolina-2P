@@ -85,7 +85,7 @@
     </style>
 </head>
 <body>
-    <h1>Listado de Sucursales</h1>
+    <h1>Listado de Sucursales-Tanque</h1>
 
     <a class="volver-link" href="index.php">← Volver al Menú Principal</a>
 

@@ -77,7 +77,7 @@ switch ($action) {
         break;
     case 'mostrar_cola':
         if (isset($_GET['id'])) {
-            $Ccola_estimada->mostrarPorSucursal($_GET['id']);
+            $Ccola_estimada->mostrarSucursal($_GET['id']);
         }
         break;
     default:

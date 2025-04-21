@@ -17,7 +17,7 @@ class Mcola_estimada
         $this->db = $database->obtenerConexion();
     }
 
-    public function calcularEstimacion($capacidad_actual, $consumo_por_auto, $tiempo_por_auto, $largo_vehiculo) {
+    /*public function calcularEstimacion($capacidad_actual, $consumo_por_auto, $tiempo_por_auto, $largo_vehiculo) {
         // Calcular cuántos autos se pueden atender con la capacidad disponible
         $numero_de_autos = $capacidad_actual / $consumo_por_auto;
         
@@ -35,7 +35,7 @@ class Mcola_estimada
             'tiempo_agotamiento' => gmdate("H:i:s", $tiempo_agotamiento * 60), // Tiempo estimado en formato H:i:s
             'distancia_cola' => round($distancia_cola, 2) // Distancia estimada de la cola en metros
         ];
-    }
+    }*/
 
     /*public function obtenerPorSucursal($sucursal_id) {
         $query = "SELECT ce.*, c.tipo, sc.capacidad_actual 
@@ -65,7 +65,7 @@ class Mcola_estimada
         return $estimaciones;
     }*/
 
-    public function actualizarEstimacionAutomatica($sucursal_id, $combustible_id, $capacidad_actual) {
+    /*public function actualizarEstimacionAutomatica($sucursal_id, $combustible_id, $capacidad_actual) {
         // Consulta para obtener los datos necesarios para el cálculo
         $query = "SELECT sc.id as sucursal_combustible_id, c.consumo_por_auto, s.tiempo_por_auto, s.largo_vehiculo
                   FROM sucursal_combustible sc
@@ -113,7 +113,7 @@ class Mcola_estimada
         );
     
         return $stmt->execute();
-    }
+    }*/
 
     /*public function calcularColaEstimada($sucursal_id) {
         // Consulta para obtener los datos de sucursal_combustible
@@ -161,7 +161,7 @@ class Mcola_estimada
     }
     */
 
-    public function guardarEstimacion($sucursal_combustible_id, $estimacion) {
+    /*public function guardarEstimacion($sucursal_combustible_id, $estimacion) {
         // Validar que exista la relación primero
         $queryCheck = "SELECT id FROM sucursal_combustible WHERE id = ?";
         $stmtCheck = $this->db->prepare($queryCheck);
@@ -442,7 +442,124 @@ class Mcola_estimada
         $stmt->execute();
         
         return $stmt->get_result()->fetch_assoc();
+    }*/
+
+    public function calcularEstimacion($datos) {
+        // Validaciones
+        $requeridos = ['capacidad_actual', 'consumo_por_auto', 'tiempo_por_auto', 'largo_vehiculo', 'bombas_activas'];
+        foreach ($requeridos as $campo) {
+            if (!isset($datos[$campo])) {
+                throw new Exception("Campo requerido faltante: $campo");
+            }
+        }
+
+        $capacidad = (float)$datos['capacidad_actual'];
+        $consumo = (float)$datos['consumo_por_auto'];
+        $tiempo = (float)$datos['tiempo_por_auto'];
+        $largo = (float)$datos['largo_vehiculo'];
+        $bombas = max(1, (int)$datos['bombas_activas']);
+
+        if ($capacidad <= 0 || $consumo <= 0 || $tiempo <= 0 || $largo <= 0) {
+            throw new Exception("Todos los valores deben ser positivos");
+        }
+
+        // Cálculos
+        $numero_autos = $capacidad / $consumo;
+        $tiempo_total = ($numero_autos * $tiempo) / $bombas;
+        $distancia_cola = $numero_autos * $largo;
+
+        return [
+            'numero_autos' => (int)round($numero_autos),
+            'tiempo_agotamiento' => $this->formatearTiempo($tiempo_total),
+            'distancia_cola' => round($distancia_cola, 2),
+            'bombas_activas' => $bombas
+        ];
     }
 
-    
+    public function obtenerCombustiblesActivos($sucursal_id) {
+        $query = "SELECT 
+                    sc.id AS sucursal_combustible_id,
+                    sc.sucursal_id,
+                    sc.combustible_id,
+                    sc.capacidad_actual,
+                    c.tipo,
+                    c.consumo_por_auto,
+                    s.tiempo_por_auto,
+                    s.largo_vehiculo,
+                    s.bombas_activas
+                  FROM sucursal_combustible sc
+                  JOIN combustible c ON sc.combustible_id = c.id
+                  JOIN sucursal s ON sc.sucursal_id = s.id
+                  WHERE sc.sucursal_id = ? 
+                  AND sc.estado = 'activo'
+                  AND sc.capacidad_actual > 0";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->bind_param("i", $sucursal_id);
+        $stmt->execute();
+        
+        $result = $stmt->get_result();
+        $combustibles = [];
+        
+        while ($row = $result->fetch_assoc()) {
+            $combustibles[] = $row;
+        }
+        
+        return $combustibles;
+    }
+
+    public function guardarEstimacion($sucursal_combustible_id, $estimacion) {
+        $query = "INSERT INTO cola_estimada 
+                 (sucursal_combustible_id, cant_autos, distancia_cola, tiempo_agotamiento)
+                 VALUES (?, ?, ?, ?)
+                 ON DUPLICATE KEY UPDATE
+                    cant_autos = VALUES(cant_autos),
+                    distancia_cola = VALUES(distancia_cola),
+                    tiempo_agotamiento = VALUES(tiempo_agotamiento),
+                    fecha_actualizada = CURRENT_TIMESTAMP";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->bind_param("iids",
+            $sucursal_combustible_id,
+            $estimacion['numero_autos'],
+            $estimacion['distancia_cola'],
+            $estimacion['tiempo_agotamiento']
+        );
+        
+        return $stmt->execute();
+    }
+
+    public function obtenerEstimaciones($sucursal_id) {
+        $query = "SELECT 
+                    ce.*, 
+                    c.tipo as tipo_combustible,
+                    sc.capacidad_actual
+                  FROM cola_estimada ce
+                  JOIN sucursal_combustible sc ON ce.sucursal_combustible_id = sc.id
+                  JOIN combustible c ON sc.combustible_id = c.id
+                  WHERE sc.sucursal_id = ?";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->bind_param("i", $sucursal_id);
+        $stmt->execute();
+        
+        $result = $stmt->get_result();
+        $estimaciones = [];
+        
+        while ($row = $result->fetch_assoc()) {
+            $estimaciones[] = $row;
+        }
+        
+        return $estimaciones;
+    }
+
+    /**
+     * Formatea minutos a formato HH:MM:SS
+     */
+    private function formatearTiempo($minutos) {
+        $horas = floor($minutos / 60);
+        $minutos = $minutos % 60;
+        return sprintf("%02d:%02d:00", $horas, $minutos);
+    }
 }
+?>

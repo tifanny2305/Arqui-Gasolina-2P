@@ -11,10 +11,15 @@ class Ccola_estimada {
         $this->Msucursal = new Msucursal();
     }
 
-    /*public function listarSucursales() {
+    public function listarSucursales() {
         $sucursales = $this->Msucursal->obtenerSucursales();
+
+        foreach ($sucursales as $sucursal) {
+            $sucursal['estimaciones'] = $this->Mcola_estimada->obtenerEstimaciones($sucursal['id']);
+        }
+
         require_once __DIR__ . '/../view/Vcola_estimada/index.php';
-    }*/
+    }
 
     /*public function mostrarPorSucursal($sucursal_id) {
         // Validación
@@ -88,7 +93,7 @@ class Ccola_estimada {
         }
     }*/
 
-    public function listarSucursales() {
+    /*public function listarSucursales() {
 
         $sucursales = $this->Msucursal->obtenerSucursales();
         
@@ -102,12 +107,12 @@ class Ccola_estimada {
         // Cargar la vista con el nuevo array
         require_once __DIR__ . '/../view/Vcola_estimada/index.php';
         
-    }
+    }*/
 
     /**
      * Muestra las estimaciones para una sucursal específica
      */
-    public function mostrarPorSucursal($sucursal_id) {
+    /*public function mostrarPorSucursal($sucursal_id) {
       
         if (!is_numeric($sucursal_id) || $sucursal_id <= 0) {
             throw new Exception("ID de sucursal inválido");
@@ -136,12 +141,12 @@ class Ccola_estimada {
         // Cargar vista
         require_once __DIR__ . '/../view/Vcola_estimada/estimacion.php';
         
-    }
+    }*/
 
     /**
      * Actualiza las estimaciones para una sucursal (endpoint API)
      */
-    public function actualizarEstimacion() {
+    /*public function actualizarEstimacion() {
         header('Content-Type: application/json');
         
         try {
@@ -179,12 +184,12 @@ class Ccola_estimada {
                 'sucursal_id' => $sucursal_id ?? 0
             ]);
         }
-    }
+    }*/
 
     /**
      * Método interno para actualizar todas las estimaciones de una sucursal
      */
-    private function actualizarEstimacionesSucursal($sucursal_id) {
+    /*private function actualizarEstimacionesSucursal($sucursal_id) {
         try {
             // 1. Obtener datos de combustibles de la sucursal
             $combustibles = $this->Mcola_estimada->obtenerDatosCombustibleSucursal($sucursal_id);
@@ -266,9 +271,86 @@ class Ccola_estimada {
             $relacion['id'],
             $estimacion
         );
+    }*/
+
+    public function mostrarSucursal($sucursal_id) {
+        if (!is_numeric($sucursal_id) || $sucursal_id <= 0) {
+            throw new Exception("ID de sucursal inválido");
+        }
+        
+        $sucursal = $this->Msucursal->obtenerSucursalPorId($sucursal_id);
+        if (!$sucursal) {
+            throw new Exception("Sucursal no encontrada");
+        }
+        
+        $estimaciones = $this->Mcola_estimada->obtenerEstimaciones($sucursal_id);
+        $tanques = $this->Msucursal->obtenerTanquesSucursal($sucursal_id);
+        
+        require_once __DIR__ . '/../view/Vcola_estimada/estimacion.php';
     }
 
+    public function actualizarEstimaciones($sucursal_id) {
+        header('Content-Type: application/json');
     
-
+        // Validación del parámetro
+        if (!is_numeric($sucursal_id) || $sucursal_id <= 0) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'ID de sucursal inválido'
+            ]);
+            return;
+        }
+    
+        try {
+            // Obtener combustibles activos en la sucursal
+            $combustibles = $this->Mcola_estimada->obtenerCombustiblesActivos($sucursal_id);
+    
+            if (empty($combustibles)) {
+                throw new Exception("La sucursal no tiene combustibles activos con capacidad");
+            }
+    
+            $resultados = [];
+    
+            foreach ($combustibles as $combustible) {
+                // Calcular estimación basada en los datos del combustible
+                $estimacion = $this->Mcola_estimada->calcularEstimacion([
+                    'capacidad_actual'  => $combustible['capacidad_actual'],
+                    'consumo_por_auto'  => $combustible['consumo_por_auto'],
+                    'tiempo_por_auto'   => $combustible['tiempo_por_auto'],
+                    'largo_vehiculo'    => $combustible['largo_vehiculo'],
+                    'bombas_activas'    => $combustible['bombas_activas']
+                ]);
+    
+                // Guardar la estimación en la base de datos
+                $this->Mcola_estimada->guardarEstimacion(
+                    $combustible['sucursal_combustible_id'],
+                    $estimacion
+                );
+    
+                // Agregar al arreglo de resultados
+                $resultados[] = [
+                    'combustible_id' => $combustible['combustible_id'],
+                    'tipo'           => $combustible['tipo'],
+                    'estimacion'     => $estimacion
+                ];
+            }
+    
+            // Éxito
+            echo json_encode([
+                'success' => true,
+                'message' => 'Estimaciones actualizadas correctamente',
+                'data'    => $resultados
+            ]);
+    
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error al actualizar las estimaciones: ' . $e->getMessage()
+            ]);
+        }
+    }
+    
 }
 ?>
