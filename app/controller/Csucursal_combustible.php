@@ -56,8 +56,7 @@ class Csucursal_combustible {
             exit;
         }
     }
-    
-    
+      
     //Procesa la asignación de combustibles
     public function asignarCombustible() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {

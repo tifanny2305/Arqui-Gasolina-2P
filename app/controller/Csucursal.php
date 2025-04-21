@@ -30,7 +30,6 @@ class Csucursal
 
     public function crear_sucursal()
     {
-
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Datos básicos de la sucursal
             $nombre = $_POST['nombre'];
@@ -50,15 +49,12 @@ class Csucursal
                 return;
             }
 
-            
-
             // Asignar combustibles seleccionados
             if (!empty($_POST['combustibles'])) {
                 foreach ($_POST['combustibles'] as $combustible_id) {
                     $this->Msucursal_combustible->asignarCombustible($sucursal_id, $combustible_id);
                 }
             }
-
 
             header("Location: index.php?action=sucursales");
             exit();
@@ -94,29 +90,28 @@ class Csucursal
             $bombas = $_POST['bombas'];
             $combustibles_seleccionados = $_POST['combustibles'] ?? [];
 
-            // Actualizar datos básicos de la sucursal
             $result = $this->Msucursal->actualizarSucursal($id, $nombre, $ubicacion, $bombas);
         
             if ($result) {
-                // 2. Obtener combustibles actualmente asignados
+                //combustibles actualmente asignados
                 $combustibles_actuales = $this->Msucursal_combustible->obtenerCombustiblesPorSucursal($id);
                 $combustibles_actuales_ids = array_column($combustibles_actuales, 'combustible_id');
                 
-                // 3. Identificar cambios
+                //Identificar cambios
                 $para_eliminar = array_diff($combustibles_actuales_ids, $combustibles_seleccionados);
                 $para_agregar = array_diff($combustibles_seleccionados, $combustibles_actuales_ids);
                 
-                // 4. Procesar eliminaciones
+                //Procesar eliminaciones
                 foreach ($para_eliminar as $combustible_id) {
-                    $this->Msucursal_combustible->eliminarCombustiblesDeSucursal($id, $combustible_id);
+                    $this->Msucursal_combustible->eliminarCombustiblesDeSucursal($id);
                 }
                 
-                // 5. Procesar nuevas asignaciones
+                //Procesar nuevas asignaciones
                 foreach ($para_agregar as $combustible_id) {
                     $this->Msucursal_combustible->asignarCombustible($id, $combustible_id);
                 }
                 
-                // 6. Actualizar estados de los que se mantienen
+                //Actualizar estados de los que se mantienen
                 $para_actualizar = array_intersect($combustibles_actuales_ids, $combustibles_seleccionados);
                 foreach ($para_actualizar as $combustible_id) {
                     $this->Msucursal_combustible->actualizarEstadoCombustible(

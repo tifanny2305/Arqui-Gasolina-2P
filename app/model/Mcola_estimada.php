@@ -17,7 +17,7 @@ class Mcola_estimada
         $this->db = $database->obtenerConexion();
     }
 
-    /*public function calcularEstimacion($capacidad_actual, $consumo_por_auto, $tiempo_por_auto, $largo_vehiculo) {
+    public function calcularEstimacion($capacidad_actual, $consumo_por_auto, $tiempo_por_auto, $largo_vehiculo) {
         // Calcular cuántos autos se pueden atender con la capacidad disponible
         $numero_de_autos = $capacidad_actual / $consumo_por_auto;
         
@@ -37,7 +37,7 @@ class Mcola_estimada
         ];
     }
 
-    public function obtenerPorSucursal($sucursal_id) {
+    /*public function obtenerPorSucursal($sucursal_id) {
         $query = "SELECT ce.*, c.tipo, sc.capacidad_actual 
                   FROM cola_estimada ce
                   JOIN sucursal_combustible sc ON ce.sucursal_combustible_id = sc.id
@@ -63,7 +63,7 @@ class Mcola_estimada
         }
 
         return $estimaciones;
-    }
+    }*/
 
     public function actualizarEstimacionAutomatica($sucursal_id, $combustible_id, $capacidad_actual) {
         // Consulta para obtener los datos necesarios para el cálculo
@@ -115,7 +115,7 @@ class Mcola_estimada
         return $stmt->execute();
     }
 
-    public function calcularColaEstimada($sucursal_id) {
+    /*public function calcularColaEstimada($sucursal_id) {
         // Consulta para obtener los datos de sucursal_combustible
         $query = "SELECT sc.id as sucursal_combustible_id, sc.combustible_id, sc.capacidad_actual
                   FROM sucursal_combustible sc
