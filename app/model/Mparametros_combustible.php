@@ -28,7 +28,7 @@ class Mparametros_combustible {
                   VALUES (?, ?, ?, ?)";
         
         $stmt = $this->db->prepare($query);
-        $stmt->bind_param("iddd", $combustible_id, $consumo, $tiempo, $largo_promedio_auto);
+        $stmt->bind_param("isdd", $combustible_id, $consumo, $tiempo, $largo_promedio_auto);
         
         if ($stmt->execute()) {
             return $this->db->insert_id;  // Retorna el ID del nuevo registro
@@ -56,7 +56,7 @@ class Mparametros_combustible {
                   WHERE combustible_id = ?";
         
         $stmt = $this->db->prepare($query);
-        $stmt->bind_param("dddi", $consumo, $tiempo, $largo_promedio_auto, $combustible_id);
+        $stmt->bind_param("ssdi", $consumo, $tiempo, $largo_promedio_auto, $combustible_id);
         
         if ($stmt->execute()) {
             return true;

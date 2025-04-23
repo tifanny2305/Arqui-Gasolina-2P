@@ -50,10 +50,12 @@ class Cparametros_combustible
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $combustible_id = $_POST['combustible_id'];
             $consumo_por_auto = floatval($_POST['consumo_por_auto']);
-            $tiempo_por_auto = floatval($_POST['tiempo_por_auto']);
+            $tiempo_por_auto = $_POST['tiempo_por_auto'];
             $largo_vehiculo = floatval($_POST['largo_vehiculo']);
             
             // Verificar si ya existen parámetros para este combustible
+            list($horas, $minutos) = explode(':', $tiempo_por_auto);
+            $tiempo_por_auto = sprintf('%02d:%02d:00', intval($horas), intval($minutos));
             $parametros_existentes = $this->Mparametros_combustible->obtenerParametroPorId($combustible_id);
             
             if ($parametros_existentes) {
@@ -85,5 +87,6 @@ class Cparametros_combustible
             exit();
         }
     }
+
 }
 

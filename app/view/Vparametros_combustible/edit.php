@@ -62,8 +62,8 @@
         
         <div class="form-group">
             <label>Tiempo por Auto (minutos)</label>
-            <input type="number" step="0.1" class="form-control" name="tiempo_por_auto" 
-                value="<?= isset($parametros['tiempo_promedio_carga']) ? htmlspecialchars($parametros['tiempo_promedio_carga']) : '' ?>" required>
+            <input type="type" class="form-control" name="tiempo_por_auto" 
+                value="<?= isset($parametros['tiempo_promedio_carga']) ? substr($parametros['tiempo_promedio_carga'], 0, 5) : '' ?>" required>
         </div>
         
         <div class="form-group">

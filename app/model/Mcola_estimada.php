@@ -58,7 +58,7 @@ class Mcola_estimada
                 tiempo_agotamiento = VALUES(tiempo_agotamiento),
                 fecha_actualizada = CURRENT_TIMESTAMP";
             $stmt = $this->db->prepare($query);
-            $stmt->bind_param("iidd",
+            $stmt->bind_param("iids",
                 $datos['sucursal_combustible_id'],
                 $estimacion['numero_de_autos'],
                 $estimacion['distancia_cola'],
@@ -88,23 +88,27 @@ class Mcola_estimada
     
         // Calcular cuántos autos pueden abastecerse con la capacidad actual
         $numero_de_autos = floor($capacidad_actual / $consumo_por_auto);
-    
-        // Calcular distancia total de la cola (en metros)
         $distancia_cola = $numero_de_autos * $largo_vehiculo;
-    
-        // Calcular el tiempo total de atención (en minutos)
-        $tiempo_agotamiento = $numero_de_autos * $tiempo_por_auto;
-
-        // Convertir minutos a formato HH:MM:SS
-        $horas = floor($tiempo_agotamiento / 60);
-        $minutos = $tiempo_agotamiento % 60;
-
-    
+        
+        // Convertir minutos a segundos
+        $tiempo_segundos_por_auto = $this->convertirTiempoATotalSegundos($tiempo_por_auto);
+        $tiempo_total_seg = $numero_de_autos * $tiempo_segundos_por_auto;
+        
+        // Formatear a HH:MM:SS
+        $horas = floor($tiempo_total_seg / 3600);
+        $minutos = floor(($tiempo_total_seg % 3600) / 60);
+        $segundos = $tiempo_total_seg % 60;
+        
         return [
             'numero_de_autos' => $numero_de_autos,
             'distancia_cola' => $distancia_cola,
-            'tiempo_agotamiento' => sprintf("%02d:%02d", $horas, $minutos)
+            'tiempo_agotamiento' => sprintf("%02d:%02d:%02d", $horas, $minutos, $segundos)
         ];
+    }
+
+    private function convertirTiempoATotalSegundos($tiempo) {
+        list($horas, $minutos, $segundos) = explode(':', $tiempo);
+        return ($horas * 3600) + ($minutos * 60) + $segundos;
     }
 
     public function obtenerEstimacionesSucursal($sucursal_id) {
