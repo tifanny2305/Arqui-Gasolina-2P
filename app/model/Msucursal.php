@@ -5,10 +5,10 @@ require_once(__DIR__ . '/../config/database.php');
 class Msucursal {
     private $db;
     
-    public $id;
-    public $nombre;
-    public $ubicacion;
-    public $bombas;
+    private $id;
+    private $nombre;
+    private $ubicacion;
+    private $bombas;
     
     public function __construct() {
         $database = new Database();
@@ -68,6 +68,7 @@ class Msucursal {
         return $stmt->execute();
     }
 
+    //* Obtiene los tanques de combustible asociados a una sucursal específica.
     public function obtenerTanquesSucursal($id) {
         $query = "SELECT * FROM sucursal WHERE id = ?";
         

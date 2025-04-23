@@ -5,18 +5,19 @@ class Mcola_estimada
 {
     private $db; 
 
-    public $id;
-    public $sucursal_combustible_id;
-    public $cant_autos;
-    public $distancia_cola;
-    public $tiempo_agotamiento;
-    public $fecha_actualizada;
+    private $id;
+    private $sucursal_combustible_id;
+    private $cant_autos;
+    private $distancia_cola;
+    private $tiempo_agotamiento;
+    private $fecha_actualizada;
 
     public function __construct() {
         $database = new Database();
         $this->db = $database->obtenerConexion();
     }
 
+    //para bd
     public function actualizarEstimacionAutomatica($sucursal_id, $combustible_id, $capacidad_actual) {
         // Consulta para obtener los datos necesarios para el cálculo
         $query = "SELECT sc.id as sucursal_combustible_id, pc.consumo_promedio_por_auto, pc.tiempo_promedio_carga, pc.largo_promedio_auto
@@ -77,6 +78,7 @@ class Mcola_estimada
         return $stmt->execute();
     }
 
+    //calculo de la estimacion
     private function calcularEstimacion($capacidad_actual, $consumo_por_auto, $tiempo_por_auto, $largo_vehiculo) {
         if ($consumo_por_auto <= 0) {
             return [
@@ -126,6 +128,22 @@ class Mcola_estimada
         return $result->fetch_all(MYSQLI_ASSOC);
     }
     
+    public function actualizarEstimacionesSucursal($sucursal_id) {
+        require_once __DIR__ . '/Msucursal.php';
+        $Msucursal = new Msucursal();
     
+        $combustibles = $Msucursal->obtenerTanquesSucursal($sucursal_id);
+        foreach ($combustibles as $combustible) {
+            if ($combustible['estado'] === 'activo') {
+                $this->actualizarEstimacionAutomatica(
+                    $sucursal_id,
+                    $combustible['id'],
+                    $combustible['capacidad_actual']
+                );
+            }
+        }
+    }
+
+
 }
 ?>

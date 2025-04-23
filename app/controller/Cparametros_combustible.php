@@ -77,12 +77,10 @@ class Cparametros_combustible
             }
             
             if ($resultado === false) {
-                // Manejar el error - podrías guardar un mensaje en sesión
                 session_start();
                 $_SESSION['error'] = "No se pudo guardar los parámetros";
             }
             
-            // Redirigir a la vista de parámetros de combustible
             header('Location: index.php?action=parametros_combustible');
             exit();
         }

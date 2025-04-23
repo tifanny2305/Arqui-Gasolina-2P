@@ -4,8 +4,8 @@ require_once(__DIR__ . '/../config/database.php');
 class Mcombustible {
     private $db;
 
-    public $id;
-    public $tipo;
+    private $id;
+    private $tipo;
 
     public function __construct() {
         $database = new Database();

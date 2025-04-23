@@ -27,7 +27,7 @@ class Ccola_estimada {
             throw new Exception("Sucursal no encontrada");
         }
         
-        $tanques = $this->Msucursal->obtenerTanquesSucursal($sucursal_id);
+        //$tanques = $this->Msucursal->obtenerTanquesSucursal($sucursal_id);
 
         $estimaciones = $this->Mcola_estimada->obtenerEstimacionesSucursal($sucursal_id);
 
@@ -38,7 +38,7 @@ class Ccola_estimada {
         require_once __DIR__ . '/../view/Vcola_estimada/estimacion.php';
     }
 
-    public function actualizarEstimacionesSucursal($sucursal_id) {
+    /*public function actualizarEstimacionesSucursal($sucursal_id) {
         $combustibles = $this->Msucursal->obtenerTanquesSucursal($sucursal_id);
         foreach ($combustibles as $combustible) {
             if ($combustible['estado'] === 'activo') {
@@ -50,7 +50,7 @@ class Ccola_estimada {
             }
         }
         
-    }
+    }*/
     
 
     

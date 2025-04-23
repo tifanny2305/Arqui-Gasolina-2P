@@ -5,10 +5,10 @@ require_once(__DIR__ . '/../config/database.php');
 class Mparametros_combustible {
     private $db;
     
-    public $combustible_id;
-    public $consumo_promedio_por_auto;
-    public $tiempo_promedio_carga;
-    public $largo_promedio_auto;
+    private $combustible_id;
+    private $consumo_promedio_por_auto;
+    private $tiempo_promedio_carga;
+    private $largo_promedio_auto;
     
     public function __construct() {
         $database = new Database();
