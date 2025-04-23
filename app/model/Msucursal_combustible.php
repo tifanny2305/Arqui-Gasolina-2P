@@ -36,7 +36,7 @@ class Msucursal_combustible {
         return $stmt->execute();
     }
 
-    public function crearRelacion($sucursal_id, $combustible_id, $duracion_tanque = null) {
+    public function crearRelacion($sucursal_id, $combustible_id, $duracion_tanque = 0) {
         $query = "INSERT INTO sucursal_combustible 
                  (sucursal_id, combustible_id, estado, fecha_actualizada, duracion_tanque) 
                  VALUES (?, ?, 'disponible', NOW(), ?)

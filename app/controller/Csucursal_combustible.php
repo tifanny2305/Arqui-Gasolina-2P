@@ -42,7 +42,7 @@ class Csucursal_combustible {
                 );
                 
                 // 2. Si el combustible está activo, actualizar estimación
-                if ($datos['estado'] === 'active') {
+                if ($datos['estado'] === 'activo') {
                     $this->Mcola_estimada->actualizarEstimacionAutomatica(
                         $sucursal_id,
                         $combustible_id,
@@ -57,7 +57,6 @@ class Csucursal_combustible {
         }
     }
       
-    //Procesa la asignación de combustibles
     public function asignarCombustible() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $sucursal_id = $_POST['sucursal_id'];
@@ -97,9 +96,6 @@ class Csucursal_combustible {
             exit;
         }
     }
-
-    
-
     
 }
 ?>

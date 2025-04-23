@@ -2,18 +2,21 @@
 require_once __DIR__ . '/../model/Msucursal.php';
 require_once __DIR__ . '/../model/Mcombustible.php';
 require_once __DIR__ . '/../model/Msucursal_combustible.php';
+require_once __DIR__ . '/../model/Mcola_estimada.php';
 
 class Csucursal
 {
     private $Msucursal;
     private $Mcombustible;
     private $Msucursal_combustible;
+    private $Ccola_estimada;
 
     public function __construct()
     {
         $this->Msucursal = new Msucursal();
         $this->Mcombustible = new Mcombustible();
         $this->Msucursal_combustible = new Msucursal_combustible();
+        $this->Ccola_estimada = new Ccola_estimada();
     }
 
     public function mostrar_crear_sucursal()
@@ -55,6 +58,9 @@ class Csucursal
                     $this->Msucursal_combustible->asignarCombustible($sucursal_id, $combustible_id);
                 }
             }
+
+            $this->Ccola_estimada->actualizarEstimacionesSucursal($sucursal_id);
+
 
             header("Location: index.php?action=sucursales");
             exit();

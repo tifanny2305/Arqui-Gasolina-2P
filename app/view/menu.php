@@ -53,6 +53,7 @@
             <a href="index.php?action=sucursales" class="menu-btn">Gestión de Sucursales</a>
             <a href="index.php?action=combustibles" class="menu-btn">Gestión de Combustibles</a>
             <a href="index.php?action=tanques" class="menu-btn">Gestión de Tanques</a>
+            <a href="index.php?action=parametros_combustible" class="menu-btn blue">Parámetros de Combustible</a>
             <a href="index.php?action=estimacion_cola" class="menu-btn blue">Estimación de Colas</a>
         </div>
     </div>

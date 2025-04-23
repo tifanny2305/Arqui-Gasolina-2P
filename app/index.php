@@ -3,11 +3,13 @@ require_once __DIR__ . '/controller/Csucursal.php';
 require_once __DIR__ . '/controller/Ccombustible.php';
 require_once __DIR__ . '/controller/Csucursal_combustible.php';
 require_once __DIR__ . '/controller/Ccola_estimada.php';
+require_once __DIR__ . '/controller/Cparametros_combustible.php';
 
 $Csucursal = new Csucursal();
 $Ccombustible = new Ccombustible();
 $Csucursal_combustible = new Csucursal_combustible();
 $Ccola_estimada = new Ccola_estimada();
+$Cparametros_combustible = new Cparametros_combustible();
 
 $action = $_GET['action'] ?? 'menu';
 
@@ -80,9 +82,22 @@ switch ($action) {
             $Ccola_estimada->mostrarSucursal($_GET['id']);
         }
         break;
+
+    // Acciones para parametro combustible
+    case 'parametros_combustible':
+        $Cparametros_combustible->listarCombustibles();
+        break;
+
+    case 'editar_parametros':
+        $Cparametros_combustible->editarParametros();
+        break;
+    
+    case 'guardar_parametros':
+        $Cparametros_combustible->guardar();
+        break;
+    
     default:
         echo "Acción no válida.";
         break;
 }
-
 ?>

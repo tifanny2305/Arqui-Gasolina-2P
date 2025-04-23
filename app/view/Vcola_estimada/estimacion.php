@@ -66,7 +66,7 @@
                         <td><?= htmlspecialchars($est['cant_autos']) ?></td>
                         <td><?= htmlspecialchars($est['distancia_cola']) ?></td>
                         <td><?= htmlspecialchars($est['tiempo_agotamiento']) ?></td>
-                        <td><?= htmlspecialchars($est['fecha_actualizacion']) ?></td>
+                        <td><?= htmlspecialchars($est['fecha_actualizada']) ?></td>
                     </tr>
                 <?php endforeach; ?>
             <?php else: ?>
@@ -77,6 +77,6 @@
         </tbody>
     </table>
     
-    <a href="index.php?action=estimacion_cola" class="btn-volver">← Volver al listado</a>tion=combustibles">Volver al listado</a>
+    <a href="index.php?action=estimacion_cola" class="btn-volver">← Volver al listado</a>
 </body>
 </html>
