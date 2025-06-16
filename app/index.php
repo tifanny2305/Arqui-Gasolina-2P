@@ -78,9 +78,7 @@ switch ($action) {
         $Ccola_estimada->listarSucursales();
         break;
     case 'mostrar_cola':
-        if (isset($_GET['id'])) {
-            $Ccola_estimada->mostrarSucursal($_GET['id']);
-        }
+        $Ccola_estimada->mostrarSucursal($_GET['id']);
         break;
 
     // Acciones para parametro combustible

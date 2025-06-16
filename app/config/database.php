@@ -3,7 +3,7 @@ class Database {
     private $host = 'localhost';
     private $usuario = 'root';
     private $clave = ''; // Cambia si tienes contraseña
-    private $bd = 'gasolinera'; 
+    private $bd = 'gasolinera_patron'; 
     public $conexion;
 
     public function __construct() {
