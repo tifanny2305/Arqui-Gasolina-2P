@@ -10,6 +10,7 @@ $Ccombustible = new Ccombustible();
 $Csucursal_combustible = new Csucursal_combustible();
 $Ccola_estimada = new Ccola_estimada();
 $Cparametros_combustible = new Cparametros_combustible();
+$Calmacenamiento = new Calmacenamiento();
 
 $action = $_GET['action'] ?? 'menu';
 
@@ -80,6 +81,18 @@ switch ($action) {
     case 'mostrar_cola':
         $Ccola_estimada->mostrarSucursal($_GET['id']);
         break;
+    
+    case 'actualizar_estimaciones':
+        $Ccola_estimada = new Ccola_estimada();
+        $id = $_GET['id'] ?? null;
+        if ($id) {
+            $Ccola_estimada->actualizarEstimacionesSucursal($id);
+        } else {
+            header('Location: index.php?action=estimacion_cola');
+            exit;
+        }
+        break;
+    
 
     // Acciones para parametro combustible
     case 'parametros_combustible':
@@ -96,6 +109,23 @@ switch ($action) {
     
     default:
         echo "Acción no válida.";
+        break;
+
+    // Acciones para almacenamiento
+    case 'almacenamiento':
+        $Calmacenamiento->index();
+        break;
+
+    case 'gestionar_almacenamiento':
+        $Calmacenamiento->gestionar();
+        break;
+
+    case 'actualizar_almacenamiento':
+        $Calmacenamiento->actualizar();
+        break;
+
+    case 'detalle_almacenamiento':
+        $Calmacenamiento->detalle();
         break;
 }
 ?>
