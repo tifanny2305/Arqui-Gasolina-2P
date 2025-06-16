@@ -2,156 +2,232 @@
 require_once __DIR__ . '/../model/Msucursal.php';
 require_once __DIR__ . '/../model/Mcombustible.php';
 require_once __DIR__ . '/../model/Msucursal_combustible.php';
-require_once __DIR__ . '/../model/Mcola_estimada.php';
 
 class Csucursal
 {
     private $Msucursal;
     private $Mcombustible;
     private $Msucursal_combustible;
-    private $Mcola_estimada;
 
     public function __construct()
     {
         $this->Msucursal = new Msucursal();
         $this->Mcombustible = new Mcombustible();
         $this->Msucursal_combustible = new Msucursal_combustible();
-        $this->Mcola_estimada = new Mcola_estimada();
     }
 
     public function mostrar_crear_sucursal()
     {
-        $combustibles = $this->Mcombustible->obtenerCombustible();
-        require_once __DIR__ . '/../view/Vsucursal/create.php';
+        try {
+            $combustibles = $this->Mcombustible->obtenerCombustible();
+            require_once __DIR__ . '/../view/Vsucursal/create.php';
+        } catch (Exception $e) {
+            error_log("Error en mostrar_crear_sucursal: " . $e->getMessage());
+            $_SESSION['error'] = "Error al cargar el formulario de creación";
+            header("Location: index.php?action=sucursales");
+            exit;
+        }
     }
 
     public function indexS()
     {
-        $sucursales = $this->Msucursal->obtenerSucursales(); 
-        require_once __DIR__ . '/../view/Vsucursal/index.php';
+        try {
+            $sucursales_result = $this->Msucursal->obtenerSucursales();
+            
+            // Convertir resultado a array
+            $sucursales = [];
+            if ($sucursales_result && is_object($sucursales_result)) {
+                while ($row = $sucursales_result->fetch_assoc()) {
+                    $sucursales[] = $row;
+                }
+            }
+            
+            require_once __DIR__ . '/../view/Vsucursal/index.php';
+        } catch (Exception $e) {
+            error_log("Error en indexS: " . $e->getMessage());
+            $error = "Error al cargar las sucursales";
+            require_once __DIR__ . '/../view/error.php';
+        }
     }
 
     public function crear_sucursal()
     {
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            // Datos básicos de la sucursal
-            $nombre = $_POST['nombre'];
-            $ubicacion = $_POST['ubicacion'];
-            $bombas = $_POST['bombas'];
+        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+            header("Location: index.php?action=crear_sucursal");
+            exit;
+        }
 
-            if (empty($nombre) || empty($ubicacion) || empty($bombas)) {
-                echo "Por favor, complete todos los campos.";
-                return;
+        try {
+            // Validar datos básicos
+            $nombre = trim($_POST['nombre'] ?? '');
+            $ubicacion = trim($_POST['ubicacion'] ?? '');
+            $bombas = intval($_POST['bombas'] ?? 0);
+            $combustibles_seleccionados = $_POST['combustibles'] ?? [];
+
+            if (empty($nombre) || empty($ubicacion) || $bombas <= 0) {
+                throw new Exception("Por favor, complete todos los campos obligatorios");
             }
 
             // Crear sucursal
             $sucursal_id = $this->Msucursal->crearSucursal($nombre, $ubicacion, $bombas);
             
             if (!$sucursal_id) {
-                echo "Error al crear sucursal";
-                return;
+                throw new Exception("Error al crear la sucursal");
             }
 
             // Asignar combustibles seleccionados
-            if (!empty($_POST['combustibles'])) {
-                foreach ($_POST['combustibles'] as $combustible_id) {
-                    $this->Msucursal_combustible->asignarCombustible($sucursal_id, $combustible_id);
+            $combustibles_asignados = 0;
+            if (!empty($combustibles_seleccionados)) {
+                foreach ($combustibles_seleccionados as $combustible_id) {
+                    if ($this->Msucursal_combustible->asignarCombustible($sucursal_id, $combustible_id)) {
+                        $combustibles_asignados++;
+                    }
                 }
             }
 
-            $this->Mcola_estimada->actualizarEstimacionesSucursal($sucursal_id);
-
-
+            $_SESSION['success'] = "Sucursal creada exitosamente. Se asignaron $combustibles_asignados tipos de combustible.";
             header("Location: index.php?action=sucursales");
-            exit();
+            exit;
+
+        } catch (Exception $e) {
+            error_log("Error en crear_sucursal: " . $e->getMessage());
+            $_SESSION['error'] = $e->getMessage();
+            header("Location: index.php?action=crear_sucursal");
+            exit;
         }
     }
 
     public function editar_sucursal()
     {
-        if (isset($_GET['id'])) {
-            $id = $_GET['id'];
-            $sucursal = $this->Msucursal->obtenerSucursalPorId($id);
-            $combustibles = $this->Mcombustible->obtenerCombustible();
-            $combustibles_seleccionados = $this->Msucursal_combustible->obtenerCombustiblesPorSucursal($id);
-
-            if ($sucursal && $combustibles) {
-                require_once __DIR__ . '/../view/Vsucursal/edit.php';
-            } else {
-                header("Location: index.php?action=sucursales&error=datos_no_encontrados");
-                exit;
+        try {
+            $id = $_GET['id'] ?? null;
+            
+            if (!$id || !is_numeric($id)) {
+                throw new Exception("ID de sucursal inválido");
             }
-        } else {
-            header("Location: index.php?action=sucursales&error=id_no_proporcionado");
+
+            $sucursal = $this->Msucursal->obtenerSucursalPorId($id);
+            if (!$sucursal) {
+                throw new Exception("Sucursal no encontrada");
+            }
+
+            $combustibles_result = $this->Mcombustible->obtenerCombustible();
+            $combustibles = [];
+            if ($combustibles_result && is_object($combustibles_result)) {
+                while ($row = $combustibles_result->fetch_assoc()) {
+                    $combustibles[] = $row;
+                }
+            }
+
+            $combustibles_seleccionados_result = $this->Msucursal_combustible->obtenerCombustiblesPorSucursal($id);
+            $combustibles_seleccionados = [];
+            foreach ($combustibles_seleccionados_result as $combustible) {
+                $combustibles_seleccionados[] = $combustible['id'];
+            }
+
+            require_once __DIR__ . '/../view/Vsucursal/edit.php';
+
+        } catch (Exception $e) {
+            error_log("Error en editar_sucursal: " . $e->getMessage());
+            $_SESSION['error'] = $e->getMessage();
+            header("Location: index.php?action=sucursales");
             exit;
         }
     }
 
     public function actualizar_sucursal()
     {
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $id = $_POST['id'];
-            $nombre = $_POST['nombre'];
-            $ubicacion = $_POST['ubicacion'];
-            $bombas = $_POST['bombas'];
+        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+            header("Location: index.php?action=sucursales");
+            exit;
+        }
+
+        try {
+            $id = $_POST['id'] ?? null;
+            $nombre = trim($_POST['nombre'] ?? '');
+            $ubicacion = trim($_POST['ubicacion'] ?? '');
+            $bombas = intval($_POST['bombas'] ?? 0);
             $combustibles_seleccionados = $_POST['combustibles'] ?? [];
 
-
-            //Actualiza Sucursal
-            $result = $this->Msucursal->actualizarSucursal($id, $nombre, $ubicacion, $bombas);
-        
-            if ($result) {
-                //Obtener los combustibles
-                $combustibles_actuales = $this->Msucursal_combustible->obtenerCombustiblesPorSucursal($id);
-                $combustibles_actuales_ids = array_column($combustibles_actuales, 'combustible_id');
-                
-                //Identificar cambios
-                $para_eliminar = array_diff($combustibles_actuales_ids, $combustibles_seleccionados);
-                $para_agregar = array_diff($combustibles_seleccionados, $combustibles_actuales_ids);
-                
-                //Elimina la sucursal con su combustible
-                foreach ($para_eliminar as $combustible_id) {
-                    $this->Msucursal_combustible->eliminarCombustiblesDeSucursal($id);
-                }
-                
-                //Asignar un combustible a una sucursal
-                foreach ($para_agregar as $combustible_id) {
-                    $this->Msucursal_combustible->asignarCombustible($id, $combustible_id);
-                }
-                
-                //Actualizar la sucursal y su combustible
-                $para_actualizar = array_intersect($combustibles_actuales_ids, $combustibles_seleccionados);
-                foreach ($para_actualizar as $combustible_id) {
-                    $this->Msucursal_combustible->actualizarEstadoCombustible($id, $combustible_id, 'disponible');
-                }
-                
-                header("Location: index.php?action=sucursales&success=actualizado");
-                exit;
-            } else {
-                header("Location: index.php?action=editar_sucursal&id=$id&error=actualizacion_fallida");
-                exit;
+            if (!$id || !is_numeric($id)) {
+                throw new Exception("ID de sucursal inválido");
             }
+
+            if (empty($nombre) || empty($ubicacion) || $bombas <= 0) {
+                throw new Exception("Por favor, complete todos los campos obligatorios");
+            }
+
+            // Actualizar datos básicos de la sucursal
+            $resultado = $this->Msucursal->actualizarSucursal($id, $nombre, $ubicacion, $bombas);
+            
+            if (!$resultado) {
+                throw new Exception("Error al actualizar la sucursal");
+            }
+
+            // Gestionar combustibles
+            $combustibles_actuales = $this->Msucursal_combustible->obtenerCombustiblesPorSucursal($id);
+            $combustibles_actuales_ids = array_column($combustibles_actuales, 'id');
+            
+            // Identificar cambios
+            $para_eliminar = array_diff($combustibles_actuales_ids, $combustibles_seleccionados);
+            $para_agregar = array_diff($combustibles_seleccionados, $combustibles_actuales_ids);
+            
+            // Eliminar combustibles no seleccionados
+            foreach ($para_eliminar as $combustible_id) {
+                $this->Msucursal_combustible->eliminarCombustible($id, $combustible_id);
+            }
+            
+            // Agregar nuevos combustibles
+            foreach ($para_agregar as $combustible_id) {
+                $this->Msucursal_combustible->asignarCombustible($id, $combustible_id);
+            }
+
+            $_SESSION['success'] = "Sucursal actualizada exitosamente";
+            header("Location: index.php?action=sucursales");
+            exit;
+
+        } catch (Exception $e) {
+            error_log("Error en actualizar_sucursal: " . $e->getMessage());
+            $_SESSION['error'] = $e->getMessage();
+            $id = $_POST['id'] ?? '';
+            header("Location: index.php?action=editar_sucursal&id=$id");
+            exit;
         }
     }
 
     public function eliminar_sucursal()
     {
-        if (isset($_GET['id'])) {
-            $id = $_GET['id'];
-
-            // Primero eliminamos las relaciones en sucursal_combustible
-            $this->Msucursal_combustible->eliminarCombustiblesDeSucursal($id);
-
-            if ($this->Msucursal->eliminarSucursal($id)) {
-                header("Location: index.php?action=sucursales");
-                exit;
-            } else {
-                echo "Error al eliminar la sucursal.";
+        try {
+            $id = $_GET['id'] ?? null;
+            
+            if (!$id || !is_numeric($id)) {
+                throw new Exception("ID de sucursal inválido");
             }
-        } else {
-            echo "ID no proporcionado.";
+
+            // Verificar que la sucursal existe
+            $sucursal = $this->Msucursal->obtenerSucursalPorId($id);
+            if (!$sucursal) {
+                throw new Exception("Sucursal no encontrada");
+            }
+
+            // Eliminar sucursal (CASCADE eliminará automáticamente las relaciones)
+            $resultado = $this->Msucursal->eliminarSucursal($id);
+            
+            if ($resultado) {
+                $_SESSION['success'] = "Sucursal '{$sucursal['nombre']}' eliminada exitosamente";
+            } else {
+                throw new Exception("Error al eliminar la sucursal");
+            }
+
+            header("Location: index.php?action=sucursales");
+            exit;
+
+        } catch (Exception $e) {
+            error_log("Error en eliminar_sucursal: " . $e->getMessage());
+            $_SESSION['error'] = $e->getMessage();
+            header("Location: index.php?action=sucursales");
+            exit;
         }
     }
-
 }
 ?>

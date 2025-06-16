@@ -65,29 +65,9 @@ class Calmacenamiento {
             // Obtener almacenamientos de la sucursal
             $almacenamientos = $this->Malmacenamiento->obtenerAlmacenamientosPorSucursal($sucursal_id);
             
-            // Obtener combustibles disponibles para asignar
-            $combustibles_result = $this->Mcombustible->obtenerCombustible();
-            $combustibles_disponibles = [];
-            if ($combustibles_result && is_object($combustibles_result)) {
-                while ($row = $combustibles_result->fetch_assoc()) {
-                    // Verificar si ya está asignado a esta sucursal
-                    $ya_asignado = false;
-                    foreach ($almacenamientos as $alm) {
-                        if ($alm['combustible_id'] == $row['id']) {
-                            $ya_asignado = true;
-                            break;
-                        }
-                    }
-                    if (!$ya_asignado) {
-                        $combustibles_disponibles[] = $row;
-                    }
-                }
-            }
-
             $datos_vista = [
                 'sucursal' => $sucursal,
-                'almacenamientos' => $almacenamientos,
-                'combustibles_disponibles' => $combustibles_disponibles
+                'almacenamientos' => $almacenamientos
             ];
 
             require_once __DIR__ . '/../view/Valmacenamiento/gestionar.php';
@@ -124,26 +104,28 @@ class Calmacenamiento {
                 try {
                     // Validar datos
                     $capacidad = floatval($datos['cap_actual'] ?? 0);
-                    $capacidad_maxima = !empty($datos['cap_maxima']) ? floatval($datos['cap_maxima']) : null;
                     $estado = $datos['estado'] ?? 'inactivo';
 
                     if ($capacidad < 0) {
                         throw new Exception("Capacidad inválida para almacenamiento ID: $almacenamiento_id");
                     }
 
-                    if ($capacidad_maxima !== null && $capacidad > $capacidad_maxima) {
-                        throw new Exception("Capacidad actual no puede ser mayor que la máxima para almacenamiento ID: $almacenamiento_id");
-                    }
-
                     // Actualizar almacenamiento
-                    $resultado = $this->actualizarAlmacenamientoCompleto($almacenamiento_id, $capacidad, $capacidad_maxima, $estado);
+                    $resultado = $this->Malmacenamiento->actualizarAlmacenamiento($almacenamiento_id, $capacidad, $estado);
 
                     if ($resultado) {
                         $actualizaciones_exitosas++;
                         
                         // Si está activo, recalcular estimación
                         if ($estado === 'activo') {
-                            $this->recalcularEstimacion($almacenamiento_id, $capacidad);
+                            $almacenamiento = $this->Malmacenamiento->obtenerAlmacenamientoPorId($almacenamiento_id);
+                            if ($almacenamiento) {
+                                $this->Mcola_estimada->actualizarEstimacionAutomatica(
+                                    $almacenamiento['sucursal_id'],
+                                    $almacenamiento['combustible_id'],
+                                    $capacidad
+                                );
+                            }
                         }
                     } else {
                         $errores[] = "Error al actualizar almacenamiento ID: $almacenamiento_id";
@@ -156,11 +138,10 @@ class Calmacenamiento {
             }
 
             // Preparar mensaje de respuesta
-            session_start();
             if ($actualizaciones_exitosas > 0 && empty($errores)) {
-                $_SESSION['success'] = "Almacenamientos actualizados correctamente";
+                $_SESSION['success'] = "Almacenamientos actualizados correctamente ($actualizaciones_exitosas tanques)";
             } elseif ($actualizaciones_exitosas > 0 && !empty($errores)) {
-                $_SESSION['warning'] = "Algunos almacenamientos se actualizaron, pero hubo errores: " . implode(', ', $errores);
+                $_SESSION['warning'] = "Se actualizaron $actualizaciones_exitosas tanques, pero hubo errores: " . implode(', ', $errores);
             } else {
                 $_SESSION['error'] = "Error al actualizar almacenamientos: " . implode(', ', $errores);
             }
@@ -170,176 +151,11 @@ class Calmacenamiento {
 
         } catch (Exception $e) {
             error_log("Error en actualizar almacenamientos: " . $e->getMessage());
-            session_start();
             $_SESSION['error'] = "Error al actualizar almacenamientos: " . $e->getMessage();
             
             $sucursal_id = $_POST['sucursal_id'] ?? '';
             header("Location: index.php?action=gestionar_almacenamiento&id=$sucursal_id");
             exit;
-        }
-    }
-
-    // Actualizar un almacenamiento específico
-    private function actualizarAlmacenamientoCompleto($almacenamiento_id, $capacidad, $capacidad_maxima, $estado) {
-        try {
-            $query = "UPDATE almacenamiento 
-                      SET cap_actual = ?, cap_maxima = ?, estado = ?, fecha = CURRENT_TIMESTAMP 
-                      WHERE id = ?";
-            
-            $database = new Database();
-            $db = $database->obtenerConexion();
-            $stmt = $db->prepare($query);
-            $stmt->bind_param("ddsi", $capacidad, $capacidad_maxima, $estado, $almacenamiento_id);
-            
-            return $stmt->execute();
-        } catch (Exception $e) {
-            error_log("Error en actualizarAlmacenamientoCompleto: " . $e->getMessage());
-            return false;
-        }
-    }
-
-    // Asignar nuevo combustible a sucursal
-    public function asignarCombustible() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header("Location: index.php?action=almacenamiento");
-            exit;
-        }
-
-        try {
-            $sucursal_id = $_POST['sucursal_id'] ?? null;
-            $combustible_id = $_POST['combustible_id'] ?? null;
-            $capacidad_inicial = floatval($_POST['capacidad_inicial'] ?? 0);
-            $capacidad_maxima = !empty($_POST['capacidad_maxima']) ? floatval($_POST['capacidad_maxima']) : null;
-
-            if (!$sucursal_id || !is_numeric($sucursal_id)) {
-                throw new Exception("ID de sucursal inválido");
-            }
-
-            if (!$combustible_id || !is_numeric($combustible_id)) {
-                throw new Exception("ID de combustible inválido");
-            }
-
-            if ($capacidad_inicial < 0) {
-                throw new Exception("Capacidad inicial inválida");
-            }
-
-            if ($capacidad_maxima !== null && $capacidad_inicial > $capacidad_maxima) {
-                throw new Exception("Capacidad inicial no puede ser mayor que la máxima");
-            }
-
-            // Crear relación sucursal-combustible
-            require_once __DIR__ . '/../model/Msucursal_combustible.php';
-            $msucursal_combustible = new Msucursal_combustible();
-            
-            $resultado = $msucursal_combustible->asignarCombustible($sucursal_id, $combustible_id);
-            
-            if ($resultado) {
-                // Actualizar el almacenamiento creado automáticamente
-                $almacenamiento = $this->Malmacenamiento->obtenerAlmacenamientoPorSucursalCombustible($sucursal_id, $combustible_id);
-                
-                if ($almacenamiento) {
-                    $this->actualizarAlmacenamientoCompleto(
-                        $almacenamiento['id'], 
-                        $capacidad_inicial, 
-                        $capacidad_maxima, 
-                        'activo'
-                    );
-                    
-                    // Calcular estimación inicial si está activo
-                    if ($capacidad_inicial > 0) {
-                        $this->recalcularEstimacion($almacenamiento['id'], $capacidad_inicial);
-                    }
-                }
-            }
-
-            session_start();
-            if ($resultado) {
-                $_SESSION['success'] = "Combustible asignado correctamente";
-            } else {
-                $_SESSION['error'] = "Error al asignar el combustible";
-            }
-
-            header("Location: index.php?action=gestionar_almacenamiento&id=$sucursal_id");
-            exit;
-
-        } catch (Exception $e) {
-            error_log("Error en asignarCombustible: " . $e->getMessage());
-            session_start();
-            $_SESSION['error'] = "Error al asignar combustible: " . $e->getMessage();
-            
-            $sucursal_id = $_POST['sucursal_id'] ?? '';
-            header("Location: index.php?action=gestionar_almacenamiento&id=$sucursal_id");
-            exit;
-        }
-    }
-
-    // Eliminar almacenamiento (y relación sucursal-combustible)
-    public function eliminar() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header("Location: index.php?action=almacenamiento");
-            exit;
-        }
-
-        try {
-            $almacenamiento_id = $_POST['almacenamiento_id'] ?? null;
-            $sucursal_id = $_POST['sucursal_id'] ?? null;
-
-            if (!$almacenamiento_id || !is_numeric($almacenamiento_id)) {
-                throw new Exception("ID de almacenamiento inválido");
-            }
-
-            // Obtener información del almacenamiento antes de eliminar
-            $almacenamiento = $this->Malmacenamiento->obtenerAlmacenamientoPorId($almacenamiento_id);
-            
-            if (!$almacenamiento) {
-                throw new Exception("Almacenamiento no encontrado");
-            }
-
-            // Eliminar almacenamiento (esto también eliminará sucursal_combustible por CASCADE)
-            require_once __DIR__ . '/../model/Msucursal_combustible.php';
-            $msucursal_combustible = new Msucursal_combustible();
-            
-            $resultado = $msucursal_combustible->eliminarCombustible(
-                $almacenamiento['sucursal_id'], 
-                $almacenamiento['combustible_id']
-            );
-
-            session_start();
-            if ($resultado) {
-                $_SESSION['success'] = "Almacenamiento eliminado correctamente";
-            } else {
-                $_SESSION['error'] = "Error al eliminar el almacenamiento";
-            }
-
-            header("Location: index.php?action=gestionar_almacenamiento&id=" . ($sucursal_id ?? $almacenamiento['sucursal_id']));
-            exit;
-
-        } catch (Exception $e) {
-            error_log("Error en eliminar almacenamiento: " . $e->getMessage());
-            session_start();
-            $_SESSION['error'] = "Error al eliminar almacenamiento: " . $e->getMessage();
-            
-            $sucursal_id = $_POST['sucursal_id'] ?? '';
-            header("Location: index.php?action=gestionar_almacenamiento&id=$sucursal_id");
-            exit;
-        }
-    }
-
-    // Recalcular estimación para un almacenamiento
-    private function recalcularEstimacion($almacenamiento_id, $capacidad) {
-        try {
-            // Obtener información del almacenamiento
-            $almacenamiento = $this->Malmacenamiento->obtenerAlmacenamientoPorId($almacenamiento_id);
-            
-            if ($almacenamiento && $almacenamiento['estado'] === 'activo') {
-                $this->Mcola_estimada->actualizarEstimacionAutomatica(
-                    $almacenamiento['sucursal_id'],
-                    $almacenamiento['combustible_id'],
-                    $capacidad
-                );
-            }
-        } catch (Exception $e) {
-            error_log("Error recalculando estimación: " . $e->getMessage());
         }
     }
 
@@ -393,6 +209,9 @@ class Calmacenamiento {
             // Obtener almacenamientos activos
             $almacenamientos_activos = $this->Malmacenamiento->obtenerAlmacenamientosActivos();
             
+            // Obtener almacenamientos completos para análisis
+            $almacenamientos_completos = $this->Malmacenamiento->obtenerAlmacenamientosCompletos();
+            
             // Obtener estadísticas por sucursal
             $sucursales_result = $this->Msucursal->obtenerSucursales();
             $estadisticas_por_sucursal = [];
@@ -406,6 +225,7 @@ class Calmacenamiento {
             $datos_vista = [
                 'estadisticas_generales' => $estadisticas_generales,
                 'almacenamientos_activos' => $almacenamientos_activos,
+                'almacenamientos_completos' => $almacenamientos_completos,
                 'estadisticas_por_sucursal' => $estadisticas_por_sucursal
             ];
 
@@ -417,9 +237,69 @@ class Calmacenamiento {
         }
     }
 
-    // Mostrar página de error
+    // Buscar almacenamientos
+    public function buscar() {
+        try {
+            $criterios = [];
+            
+            if (!empty($_GET['estado'])) {
+                $criterios['estado'] = $_GET['estado'];
+            }
+            
+            if (!empty($_GET['sucursal_id']) && is_numeric($_GET['sucursal_id'])) {
+                $criterios['sucursal_id'] = intval($_GET['sucursal_id']);
+            }
+            
+            if (!empty($_GET['combustible_id']) && is_numeric($_GET['combustible_id'])) {
+                $criterios['combustible_id'] = intval($_GET['combustible_id']);
+            }
+            
+            if (!empty($_GET['capacidad_minima']) && is_numeric($_GET['capacidad_minima'])) {
+                $criterios['capacidad_minima'] = floatval($_GET['capacidad_minima']);
+            }
+
+            $almacenamientos = $this->Malmacenamiento->buscarAlmacenamientos($criterios);
+            
+            // Obtener datos para los filtros
+            $sucursales_result = $this->Msucursal->obtenerSucursales();
+            $combustibles_result = $this->Mcombustible->obtenerCombustible();
+
+            $sucursales = [];
+            $combustibles = [];
+            if ($sucursales_result && is_object($sucursales_result)) {
+                while ($row = $sucursales_result->fetch_assoc()) {
+                    $sucursales[] = $row;
+                }
+            }
+
+            if ($combustibles_result && is_object($combustibles_result)) {
+                while ($row = $combustibles_result->fetch_assoc()) {
+                    $combustibles[] = $row;
+                }
+            }
+
+            $datos_vista = [
+                'almacenamientos' => $almacenamientos,
+                'sucursales' => $sucursales,
+                'combustibles' => $combustibles,
+                'criterios' => $criterios
+            ];
+            require_once __DIR__ . '/../view/Valmacenamiento/buscar.php';
+        } catch (Exception $e) {
+            error_log("Error en buscar almacenamientos: " . $e->getMessage());
+            $this->mostrarError("Error al buscar almacenamientos: " . $e->getMessage());
+        }
+    }
+    // Mostrar error genérico
+
     private function mostrarError($mensaje) {
-        $error = $mensaje;
-        require_once __DIR__ . '/../view/error.php';
+        $_SESSION['error'] = $mensaje;
+        header("Location: index.php?action=almacenamiento");
+        exit;
+    }
+    // Método para manejar excepciones no capturadas
+    public function manejarExcepcion($exception) {
+        error_log("Excepción no capturada: " . $exception->getMessage());
+        $this->mostrarError("Ocurrió un error inesperado. Por favor, inténtelo de nuevo más tarde.");
     }
 }
