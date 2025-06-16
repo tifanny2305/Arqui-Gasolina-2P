@@ -4,10 +4,10 @@ require_once __DIR__ . '/controller/Ccombustible.php';
 require_once __DIR__ . '/controller/Csucursal_combustible.php';
 require_once __DIR__ . '/controller/Ccola_estimada.php';
 require_once __DIR__ . '/controller/Cparametros_combustible.php';
+require_once __DIR__ . '/controller/Calmacenamiento.php';
 
 $Csucursal = new Csucursal();
 $Ccombustible = new Ccombustible();
-$Csucursal_combustible = new Csucursal_combustible();
 $Ccola_estimada = new Ccola_estimada();
 $Cparametros_combustible = new Cparametros_combustible();
 $Calmacenamiento = new Calmacenamiento();
@@ -60,20 +60,6 @@ switch ($action) {
         $Ccombustible->eliminar_combustible();
         break;
     
-    // Acciones para asignar combustibles a sucursales
-    case 'tanques':
-        $Csucursal_combustible->listarSucursales();
-        break;
-    case 'gestionar_tanques':
-        $Csucursal_combustible->tanques();
-        break;
-    case 'actualizar_tanques':
-        $Csucursal_combustible->actualizarTanques();
-        break;
-    case 'eliminar_combustible_sucursal':
-        $Csucursal_combustible->eliminarCombustible();
-        break;
-
     // Acciones para estimar colas
     case 'estimacion_cola':
         $Ccola_estimada->listarSucursales();
